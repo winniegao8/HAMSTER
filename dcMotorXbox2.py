@@ -22,6 +22,8 @@ pinTwoMotor_pwm = GPIO.PWM(31, 10000)  # PWM pin
 pinOneMotor_pwm.start(0)
 pinTwoMotor_pwm.start(0)
 
+voltage = 10
+
 # Servo
 servo = 18
 #GPIO.setup(12, GPIO.OUT)
@@ -31,7 +33,6 @@ servo = 18
 servo_pwm = pigpio.pi()
 servo_pwm.set_mode(servo, pigpio.OUTPUT)
 servo_pwm.set_PWM_frequency(servo, 50)
-
 
 # Controller
 def map_value(value, in_min, in_max, out_min, out_max):
@@ -50,11 +51,6 @@ def backward(speed):
     GPIO.output(29, False)
     pinTwoMotor_pwm.ChangeDutyCycle(speed)
 
-# def servo(speed):
-# #    print(f"Turning at {speed}")
-    # GPIO.output(12, False)
-    # servo_pwm.ChangeDutyCycle(speed)
-
 
 try:
     # Event loop
@@ -62,26 +58,33 @@ try:
         if event.type == evdev.ecodes.EV_ABS:
             # L Joystick
             if event.code == evdev.ecodes.ABS_Y:
-                speed = round(map_value(event.value, 0, 31000, 100, 0))
-                print(f"Up: {event.value}")
+                percent = round(map_value(event.value, 0, 31000, 100, 0))
+                speed = percent * 5 * voltage
+                print(f"Forward: {speed} RPM")
                 forward(speed)
             if event.code == evdev.ecodes.ABS_Y:
-                speed = round(map_value(event.value, 35000, 65535, 0, 100))
-                print(f"Down: {event.value}")
+                percent = round(map_value(event.value, 35000, 65535, 0, 100))
+                speed = percent * 5 * voltage
+                print(f"Backward: {speed} RPM")
                 backward(speed)
             # R Joystick
             if event.code == evdev.ecodes.ABS_Z:
                 val = event.value
                 if val <= 15000:
-                    servo_pwm.set_servo_pulsewidth(servo, 750) ;                
+                    servo_pwm.set_servo_pulsewidth(servo, 833.3) ; # 30 deg   
+                    angle = 30
                 if 15000 < val <= 30000:
-                    servo_pwm.set_servo_pulsewidth(servo, 1125) ;
+                    servo_pwm.set_servo_pulsewidth(servo, 1166.67) ; # 60 deg
+                    angle = 60
                 if 30000 < val <= 35000:
-                    servo_pwm.set_servo_pulsewidth(18, 1500);
+                    servo_pwm.set_servo_pulsewidth(18, 1500); # 90 deg center
+                    angle = 90
                 if 35000 < val <= 50000:
-                    servo_pwm.set_servo_pulsewidth(18, 1875);
+                    servo_pwm.set_servo_pulsewidth(18, 1833.3); # 120 deg
+                    angle = 120
                 if val > 50000:
-                    servo_pwm.set_servo_pulsewidth(18, 2250);
+                    servo_pwm.set_servo_pulsewidth(18, 2166.67); # 150 deg
+                    angle = 150
                 # if val <= 30000:
                     # val = 30000
                     # print(f"Left: {val}")
@@ -95,20 +98,8 @@ try:
                     # val = 35000
                     # print(f"Right: {val}")
                     # servo(9)
-            #sleep(0.2)
-                # if val <= 31000:
-                    # speed = round(map_value(event.value, 0, 33000, 5, 7.5))
-                    # print(f"Left: {event.value}")
-                    # servo(speed)
-                    
-                # elif val >= 35000:
-                    # speed = round(map_value(event.value, 35000, 65535, 7.5, 10))
-                    # print(f"Right: {event.value}")
-                    # servo(speed)
-#                elif val > 31000 and val < 35000:
-#                    speed = 0
-#                    servo(speed)
 
+with open("motor_data.csv","a") as f: f.write(f"{time.strftime('%M:%S')},{speed},{angle}\n");
 
 except KeyboardInterrupt:
     pass
