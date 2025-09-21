@@ -9,7 +9,8 @@ import numpy as np
 from time import sleep
 import pigpio
 
-
+motor_file = open("motor_rpm.csv", "a")
+pendulum_file = open("pendulum_angle.csv", "a")
 
 # Dc Motor
 GPIO.setmode(GPIO.BOARD)
@@ -45,6 +46,7 @@ def forward(speed):
     print(f"Going Forward at {speed}%")
     GPIO.output(31, False)
     pinOneMotor_pwm.ChangeDutyCycle(speed)
+    
 
 def backward(speed):
     print(f"Going Backward at {speed}%")
@@ -62,11 +64,15 @@ try:
                 speed = percent * 5 * voltage
                 print(f"Forward: {speed} RPM")
                 forward(speed)
+                motor_file.write(f"{time.strftime('%M:%S')},{speed}\n")
+                motor_file.flush()
             if event.code == evdev.ecodes.ABS_Y:
                 percent = round(map_value(event.value, 35000, 65535, 0, 100))
                 speed = percent * 5 * voltage
                 print(f"Backward: {speed} RPM")
                 backward(speed)
+                motor_file.write(f"{time.strftime('%M:%S')},{speed}\n")
+                motor_file.flush()
             # R Joystick
             if event.code == evdev.ecodes.ABS_Z:
                 val = event.value
@@ -85,6 +91,8 @@ try:
                 if val > 50000:
                     servo_pwm.set_servo_pulsewidth(18, 2166.67); # 150 deg
                     angle = 150
+                pendulum_file.write(f"{time.strftime('%M:%S')},{angle}\n")
+                pendulum_file.flush()
                 # if val <= 30000:
                     # val = 30000
                     # print(f"Left: {val}")
@@ -99,9 +107,10 @@ try:
                     # print(f"Right: {val}")
                     # servo(9)
 
-with open("motor_data.csv","a") as f: f.write(f"{time.strftime('%M:%S')},{speed},{angle}\n");
 
 except KeyboardInterrupt:
     pass
 finally:
+    motor_file.close()
+    pendulum_file.close()
     GPIO.cleanup()
