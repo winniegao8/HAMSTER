@@ -9,16 +9,16 @@ import numpy as np
 from time import sleep
 import pigpio
 
-motor_file = open("motor_rpm.csv", "a")
-pendulum_file = open("pendulum_angle.csv", "a")
+motor_file = open("\home\hamster\motor_rpm.csv", "a")
+pendulum_file = open("\home\hamster\pendulum_angle.csv", "a")
 
 # Dc Motor
 GPIO.setmode(GPIO.BOARD)
-GPIO.setup(29, GPIO.OUT)
-GPIO.setup(31, GPIO.OUT)
+GPIO.setup(8, GPIO.OUT)
+GPIO.setup(10, GPIO.OUT)
 
-pinOneMotor_pwm = GPIO.PWM(29, 10000)
-pinTwoMotor_pwm = GPIO.PWM(31, 10000)  # PWM pin
+pinOneMotor_pwm = GPIO.PWM(8, 10000)
+pinTwoMotor_pwm = GPIO.PWM(10, 10000)  # PWM pin
 
 pinOneMotor_pwm.start(0)
 pinTwoMotor_pwm.start(0)
@@ -26,7 +26,7 @@ pinTwoMotor_pwm.start(0)
 voltage = 10
 
 # Servo
-servo = 18
+servo = 12
 #GPIO.setup(12, GPIO.OUT)
 #servo_pwm = GPIO.PWM(12,50)
 #servo_pwm.start(0)
@@ -44,13 +44,13 @@ print(device)
 # Motor control methods
 def forward(speed):
     print(f"Going Forward at {speed}%")
-    GPIO.output(31, False)
+    GPIO.output(10, False)
     pinOneMotor_pwm.ChangeDutyCycle(speed)
     
 
 def backward(speed):
     print(f"Going Backward at {speed}%")
-    GPIO.output(29, False)
+    GPIO.output(8, False)
     pinTwoMotor_pwm.ChangeDutyCycle(speed)
 
 
@@ -61,14 +61,14 @@ try:
             # L Joystick
             if event.code == evdev.ecodes.ABS_Y:
                 percent = round(map_value(event.value, 0, 31000, 100, 0))
-                speed = percent * 5 * voltage
+                speed = percent *.01 * 5 * voltage
                 print(f"Forward: {speed} RPM")
                 forward(speed)
                 motor_file.write(f"{time.strftime('%M:%S')},{speed}\n")
                 motor_file.flush()
             if event.code == evdev.ecodes.ABS_Y:
                 percent = round(map_value(event.value, 35000, 65535, 0, 100))
-                speed = percent * 5 * voltage
+                speed = percent *.01 * 5 * voltage
                 print(f"Backward: {speed} RPM")
                 backward(speed)
                 motor_file.write(f"{time.strftime('%M:%S')},{speed}\n")
