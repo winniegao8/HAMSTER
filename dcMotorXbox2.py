@@ -60,18 +60,24 @@ try:
         if event.type == evdev.ecodes.EV_ABS:
             # L Joystick
             if event.code == evdev.ecodes.ABS_Y:
-                percent = round(map_value(event.value, 0, 31000, 100, 0))
-                speed = percent *.01 * 5 * voltage
-                print(f"Forward: {speed} RPM")
-                forward(speed)
-                motor_file.write(f"{time.strftime('%M:%S')},{speed}\n")
-                motor_file.flush()
-            if event.code == evdev.ecodes.ABS_Y:
-                percent = round(map_value(event.value, 35000, 65535, 0, 100))
-                speed = percent *.01 * 5 * voltage
-                print(f"Backward: {-speed} RPM")
-                backward(speed)
-                motor_file.write(f"{time.strftime('%M:%S')},{-speed}\n")
+                if event.value <= 31000:  # Forward region
+                    percent = round(map_value(event.value, 0, 31000, 100, 0))
+                    speed = percent *.01 * 5 * voltage
+                    rpm = speed
+                    print(f"Forward: {speed} RPM")
+                    forward(speed)
+                    
+#                   motor_file.write(f"{time.strftime('%M:%S')},{speed}\n")
+#                   motor_file.flush()
+                
+                else:  # Backward region
+                    percent = round(map_value(event.value, 35000, 65535, 0, 100))
+                    speed = percent *.01 * 5 * voltage
+                    rpm = -speed
+                    print(f"Backward: {-speed} RPM")
+                    backward(speed)
+                    
+                motor_file.write(f"{time.strftime('%M:%S')},{rpm}\n")
                 motor_file.flush()
             # R Joystick
             if event.code == evdev.ecodes.ABS_Z:
